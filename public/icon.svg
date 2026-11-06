@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="128" fill="#0284C7"/>
+  <circle cx="256" cy="256" r="180" fill="#E0F2FE"/>
+  <!-- Star symbol in center -->
+  <path d="M256 120L290.7 207.3L384 214.6L312 276.7L334.6 368L256 319.4L177.4 368L200 276.7L128 214.6L221.3 207.3L256 120Z" fill="#FBBF24" stroke="#F59E0B" stroke-width="12" stroke-linejoin="round"/>
+  <!-- Gentle heart -->
+  <circle cx="256" cy="256" r="28" fill="#F43F5E"/>
+</svg>

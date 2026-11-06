@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Sensory-friendly animations */
+@keyframes pulseGentle {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.04); opacity: 0.95; }
+}
+
+@keyframes breatheCircle {
+  0% { transform: scale(0.75); opacity: 0.7; }
+  45% { transform: scale(1.18); opacity: 1; }
+  55% { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(0.75); opacity: 0.7; }
+}
+
+.animate-pulse-gentle {
+  animation: pulseGentle 3s ease-in-out infinite;
+}
+
+.animate-breathe {
+  animation: breatheCircle 10s ease-in-out infinite;
+}
+
+/* Custom scrollbars for kids UI */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
