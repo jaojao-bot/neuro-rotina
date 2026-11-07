@@ -169,6 +169,81 @@ export default function App() {
     sensoryAudio.playPop();
   };
 
+  const handleAddChild = ({ name, age, diagnosis }) => {
+    const newChild = {
+      id: 'child-' + Date.now(),
+      name: name.trim(),
+      age,
+      diagnosis: diagnosis.trim(),
+      avatar: '🧒',
+      stars: 0,
+      streakDays: 0,
+      colorScheme: 'calm-blue',
+      sensitivities: []
+    };
+
+    setChildrenList((prev) => [...prev, newChild]);
+    setActiveChildId(newChild.id);
+  };
+
+  const handleAddChildSensitivity = (childId, sensitivity) => {
+    const normalizedSensitivity = sensitivity.trim();
+    if (!normalizedSensitivity) return;
+
+    setChildrenList((prev) =>
+      prev.map((child) => {
+        if (child.id !== childId) return child;
+
+        const sensitivities = Array.isArray(child.sensitivities) ? child.sensitivities : [];
+        const alreadyExists = sensitivities.some(
+          (existing) =>
+            typeof existing === 'string' &&
+            existing.toLocaleLowerCase() === normalizedSensitivity.toLocaleLowerCase()
+        );
+
+        return alreadyExists
+          ? child
+          : { ...child, sensitivities: [...sensitivities, normalizedSensitivity] };
+      })
+    );
+  };
+
+  const handleDeleteChildSensitivity = (childId, sensitivity) => {
+    setChildrenList((prev) =>
+      prev.map((child) =>
+        child.id === childId
+          ? {
+              ...child,
+              sensitivities: (Array.isArray(child.sensitivities) ? child.sensitivities : [])
+                .filter((existing) => existing !== sensitivity)
+            }
+          : child
+      )
+    );
+  };
+
+  const handleUpdateChildName = (childId, name) => {
+    setChildrenList((prev) =>
+      prev.map((child) =>
+        child.id === childId ? { ...child, name: name.trim() } : child
+      )
+    );
+  };
+
+  const handleDeleteChild = (childId) => {
+    if (childrenList.length <= 1 || !childrenList.some((child) => child.id === childId)) {
+      return;
+    }
+
+    const remainingChildren = childrenList.filter((child) => child.id !== childId);
+    setChildrenList(remainingChildren);
+    setTasksList((prev) => prev.filter((task) => task.childId !== childId));
+
+    if (activeChildId === childId) {
+      setActiveChildId(remainingChildren[0].id);
+    }
+  };
+
   // Parent adds reward
   const handleAddReward = (newReward) => {
     setRewardsList((prev) => [newReward, ...prev]);
@@ -291,6 +366,11 @@ export default function App() {
             onAddReward={handleAddReward}
             onDeleteReward={handleDeleteReward}
             onSwitchChild={setActiveChildId}
+            onAddChild={handleAddChild}
+            onAddChildSensitivity={handleAddChildSensitivity}
+            onDeleteChildSensitivity={handleDeleteChildSensitivity}
+            onUpdateChildName={handleUpdateChildName}
+            onDeleteChild={handleDeleteChild}
             emotionLogs={safeEmotionLogs}
           />
         )}

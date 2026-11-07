@@ -19,11 +19,17 @@ export default function ParentsArea({
   onAddReward,
   onDeleteReward,
   onSwitchChild,
+  onAddChild,
+  onAddChildSensitivity,
+  onDeleteChildSensitivity,
+  onUpdateChildName,
+  onDeleteChild,
   emotionLogs = []
 }) {
   const safeTasks = Array.isArray(tasks) ? tasks : [];
   const safeChildren = Array.isArray(children) ? children : [];
   const safeChild = activeChild || safeChildren[0] || { id: 'child-1', name: 'Criança', avatar: '🦁', sensitivities: [] };
+  const childSensitivities = Array.isArray(safeChild.sensitivities) ? safeChild.sensitivities : [];
   const safeRewards = Array.isArray(rewards) ? rewards : [];
 
   const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'tasks', 'rewards', 'report'
@@ -32,6 +38,16 @@ export default function ParentsArea({
   const [editingTask, setEditingTask] = useState(null);
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [showNewRewardModal, setShowNewRewardModal] = useState(false);
+  const [childFormMode, setChildFormMode] = useState(null);
+  const [childNameInput, setChildNameInput] = useState('');
+  const [childNameError, setChildNameError] = useState(false);
+  const [childAgeInput, setChildAgeInput] = useState('');
+  const [childAgeError, setChildAgeError] = useState(false);
+  const [childDiagnosisInput, setChildDiagnosisInput] = useState('');
+  const [showDeleteChildConfirm, setShowDeleteChildConfirm] = useState(false);
+  const [showSensitivityForm, setShowSensitivityForm] = useState(false);
+  const [sensitivityInput, setSensitivityInput] = useState('');
+  const [sensitivityError, setSensitivityError] = useState('');
 
   // New task form state
   const [taskForm, setTaskForm] = useState({
@@ -64,6 +80,74 @@ export default function ParentsArea({
   });
 
   const pendingTasks = safeTasks.filter((t) => t && t.status === 'completed_pending_approval');
+
+  const handleSaveChildName = (e) => {
+    e.preventDefault();
+    const name = childNameInput.trim();
+    if (!name) {
+      setChildNameError(true);
+      return;
+    }
+
+    if (childFormMode === 'add') {
+      const age = childAgeInput.trim() ? Number(childAgeInput) : null;
+      if (age !== null && (!Number.isInteger(age) || age < 1)) {
+        setChildAgeError(true);
+        return;
+      }
+
+      onAddChild({
+        name,
+        age,
+        diagnosis: childDiagnosisInput.trim()
+      });
+    } else if (childFormMode === 'edit') {
+      onUpdateChildName(safeChild.id, name);
+    }
+
+    setChildFormMode(null);
+    setChildNameInput('');
+    setChildNameError(false);
+    setChildAgeInput('');
+    setChildAgeError(false);
+    setChildDiagnosisInput('');
+  };
+
+  const handleAddSensitivity = (e) => {
+    e.preventDefault();
+    const sensitivity = sensitivityInput.trim();
+    if (!sensitivity) {
+      setSensitivityError('Digite uma sensibilidade para continuar.');
+      return;
+    }
+
+    const duplicate = childSensitivities.some(
+      (existing) =>
+        typeof existing === 'string' &&
+        existing.toLocaleLowerCase() === sensitivity.toLocaleLowerCase()
+    );
+    if (duplicate) {
+      setSensitivityError('Essa sensibilidade já está registrada.');
+      return;
+    }
+
+    onAddChildSensitivity(safeChild.id, sensitivity);
+    setSensitivityInput('');
+    setSensitivityError('');
+    setShowSensitivityForm(false);
+    sensoryAudio.playPop();
+  };
+
+  const handleRemoveSensitivity = (sensitivity) => {
+    onDeleteChildSensitivity(safeChild.id, sensitivity);
+    sensoryAudio.playPop();
+  };
+
+  const handleConfirmDeleteChild = () => {
+    if (safeChildren.length <= 1) return;
+    onDeleteChild(safeChild.id);
+    setShowDeleteChildConfirm(false);
+  };
 
   const handleCreateTask = (e) => {
     e.preventDefault();
@@ -152,44 +236,326 @@ export default function ParentsArea({
   return (
     <div className="space-y-6">
       {/* Top Banner: Child Profile Info */}
-      <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-sky-100 flex items-center justify-center text-3xl shadow-inner">
-            {safeChild.avatar}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-black text-slate-800">{safeChild.name}</h3>
-              <span className="text-xs font-extrabold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200">
-                {safeChild.diagnosis}
-              </span>
+      <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-14 h-14 shrink-0 rounded-2xl bg-sky-100 flex items-center justify-center text-3xl shadow-inner">
+                {safeChild.avatar}
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg font-black text-slate-800">{safeChild.name}</h3>
+                  {safeChild.diagnosis && (
+                    <span className="text-xs font-extrabold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200">
+                      {safeChild.diagnosis}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs text-slate-500">Sensibilidades:</span>
+                  {childSensitivities.length === 0 && (
+                    <span className="text-xs text-slate-500">Nenhuma registrada</span>
+                  )}
+                  {childSensitivities.map((sensitivity, index) => (
+                    <span
+                      key={`${sensitivity}-${index}`}
+                      className="inline-flex items-center gap-1 rounded-full bg-sky-50 border border-sky-100 px-2 py-0.5 text-xs text-sky-800"
+                    >
+                      {sensitivity}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSensitivity(sensitivity)}
+                        aria-label={`Remover sensibilidade ${sensitivity}`}
+                        title={`Remover ${sensitivity}`}
+                        className="rounded-full text-sky-600 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSensitivityInput('');
+                      setSensitivityError('');
+                      setShowSensitivityForm(true);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-xl border border-sky-200 bg-white px-2 py-1 text-xs font-bold text-sky-700 hover:bg-sky-50 transition"
+                  >
+                    <Plus size={13} /> Adicionar sensibilidade
+                  </button>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Sensibilidades: {safeChild.sensitivities?.join(' • ') || 'Nenhuma registrada'}
-            </p>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setChildNameInput('');
+                  setChildNameError(false);
+                  setChildFormMode('add');
+                }}
+                className="py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black flex items-center gap-1.5 transition"
+              >
+                <UserPlus size={15} /> Adicionar criança
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setChildNameInput(safeChild.name || '');
+                  setChildNameError(false);
+                  setChildFormMode('edit');
+                }}
+                className="py-2 px-3 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-black flex items-center gap-1.5 transition"
+              >
+                <Pencil size={14} /> Editar nome
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDeleteChildConfirm(true)}
+                disabled={safeChildren.length <= 1}
+                title={safeChildren.length <= 1 ? 'O último perfil não pode ser excluído' : 'Excluir este perfil'}
+                className="py-2 px-3 rounded-xl bg-white border border-rose-200 hover:bg-rose-50 text-rose-700 text-xs font-black flex items-center gap-1.5 transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white"
+              >
+                <Trash2 size={14} /> Excluir perfil
+              </button>
+            </div>
+          </div>
+
+          {/* Switch child selector */}
+          {safeChildren.length > 1 && (
+            <div className="flex flex-wrap items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200">
+              <span className="text-xs font-bold text-slate-400 pl-2">Perfil:</span>
+              {safeChildren.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => onSwitchChild(c.id)}
+                  className={`py-1.5 px-3 rounded-xl text-xs font-black transition ${
+                    c.id === safeChild.id
+                      ? 'bg-sky-600 text-white shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {c.avatar} {c.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {childFormMode && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-sky-100">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-black text-slate-800 text-lg">
+                {childFormMode === 'add' ? 'Adicionar criança' : 'Editar nome'}
+              </h4>
+              <button
+                type="button"
+                onClick={() => setChildFormMode(null)}
+                aria-label="Fechar formulário"
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-full"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveChildName} noValidate className="space-y-4">
+              <div>
+                <label htmlFor="child-name" className="block text-xs font-bold text-slate-600 mb-1">
+                  Nome
+                </label>
+                <input
+                  id="child-name"
+                  type="text"
+                  required
+                  maxLength={40}
+                  autoFocus
+                  value={childNameInput}
+                  onChange={(e) => {
+                    setChildNameInput(e.target.value);
+                    setChildNameError(false);
+                  }}
+                  aria-invalid={childNameError}
+                  aria-describedby={childNameError ? 'child-name-error' : undefined}
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                />
+                {childNameError && (
+                  <p id="child-name-error" className="text-xs font-bold text-rose-600 mt-1">
+                    Digite um nome para continuar.
+                  </p>
+                )}
+              </div>
+
+              {childFormMode === 'add' && (
+                <>
+                  <div>
+                    <label htmlFor="child-age" className="block text-xs font-bold text-slate-600 mb-1">
+                      Idade <span className="font-normal text-slate-400">(opcional)</span>
+                    </label>
+                    <input
+                      id="child-age"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={childAgeInput}
+                      onChange={(e) => {
+                        setChildAgeInput(e.target.value);
+                        setChildAgeError(false);
+                      }}
+                      aria-invalid={childAgeError}
+                      aria-describedby={childAgeError ? 'child-age-error' : undefined}
+                      className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                    />
+                    {childAgeError && (
+                      <p id="child-age-error" className="text-xs font-bold text-rose-600 mt-1">
+                        Informe uma idade inteira maior que zero.
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="child-diagnosis" className="block text-xs font-bold text-slate-600 mb-1">
+                      Diagnóstico <span className="font-normal text-slate-400">(opcional)</span>
+                    </label>
+                    <input
+                      id="child-diagnosis"
+                      type="text"
+                      maxLength={100}
+                      value={childDiagnosisInput}
+                      onChange={(e) => setChildDiagnosisInput(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Esse dado é opcional e fica salvo neste navegador.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setChildFormMode(null)}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-black text-xs transition"
+                >
+                  {childFormMode === 'add' ? 'Criar perfil' : 'Salvar nome'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
+      )}
 
-        {/* Switch child selector */}
-        {safeChildren.length > 1 && (
-          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200">
-            <span className="text-xs font-bold text-slate-400 pl-2">Filho:</span>
-            {safeChildren.map((c) => (
+      {showSensitivityForm && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-sky-100">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h4 className="font-black text-slate-800 text-lg">Adicionar sensibilidade</h4>
+                <p className="text-xs text-slate-500 mt-1">Perfil: {safeChild.name}</p>
+              </div>
               <button
-                key={c.id}
-                onClick={() => onSwitchChild(c.id)}
-                className={`py-1.5 px-3 rounded-xl text-xs font-black transition ${
-                  c.id === safeChild.id
-                    ? 'bg-sky-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-200'
-                }`}
+                type="button"
+                onClick={() => setShowSensitivityForm(false)}
+                aria-label="Fechar formulário de sensibilidade"
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-full"
               >
-                {c.avatar} {c.name}
+                <X size={18} />
               </button>
-            ))}
+            </div>
+
+            <form onSubmit={handleAddSensitivity} noValidate className="space-y-4">
+              <div>
+                <label htmlFor="child-sensitivity" className="block text-xs font-bold text-slate-600 mb-1">
+                  Sensibilidade
+                </label>
+                <input
+                  id="child-sensitivity"
+                  type="text"
+                  maxLength={100}
+                  autoFocus
+                  value={sensitivityInput}
+                  onChange={(e) => {
+                    setSensitivityInput(e.target.value);
+                    setSensitivityError('');
+                  }}
+                  aria-invalid={Boolean(sensitivityError)}
+                  aria-describedby={sensitivityError ? 'child-sensitivity-error' : undefined}
+                  placeholder="Ex: Sons altos"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                />
+                {sensitivityError && (
+                  <p id="child-sensitivity-error" className="text-xs font-bold text-rose-600 mt-1">
+                    {sensitivityError}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowSensitivityForm(false)}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-black text-xs transition"
+                >
+                  Adicionar
+                </button>
+              </div>
+            </form>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {showDeleteChildConfirm && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-rose-100 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 mx-auto flex items-center justify-center mb-3">
+              <Trash2 size={26} />
+            </div>
+            <h4 className="font-black text-slate-800 text-base mb-1">Excluir perfil?</h4>
+            <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+              Excluir o perfil de <strong className="text-slate-800">{safeChild.name}</strong> também removerá seu saldo de estrelas e sua sequência.
+              {safeTasks.length === 0
+                ? ' Não há tarefas vinculadas a remover.'
+                : safeTasks.length === 1
+                ? ' Também será removida 1 tarefa vinculada.'
+                : ` Também serão removidas ${safeTasks.length} tarefas vinculadas.`}{' '}
+              Recompensas e histórico de emoções compartilhados serão mantidos.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteChildConfirm(false)}
+                className="py-2.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteChild}
+                className="py-2.5 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs transition"
+              >
+                Excluir perfil
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
