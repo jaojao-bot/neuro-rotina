@@ -1,30 +1,51 @@
 import React, { useState } from 'react';
 import { 
   Plus, Check, X, ShieldAlert, Star, Clock, Sparkles, UserPlus, 
-  Trash2, Award, BarChart3, Settings, CheckCircle2, AlertCircle, Heart 
+  Trash2, Award, BarChart3, Settings, CheckCircle2, AlertCircle, Heart,
+  Pencil, Database
 } from 'lucide-react';
 import WeeklyReport from './WeeklyReport';
 import { sensoryAudio } from '../utils/audio';
 
 export default function ParentsArea({
-  children,
+  children = [],
   activeChild,
-  tasks,
-  rewards,
+  tasks = [],
+  rewards = [],
   onApproveTask,
   onAddTask,
+  onUpdateTask,
   onDeleteTask,
   onAddReward,
   onDeleteReward,
   onSwitchChild,
-  emotionLogs
+  emotionLogs = []
 }) {
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const safeChildren = Array.isArray(children) ? children : [];
+  const safeChild = activeChild || safeChildren[0] || { id: 'child-1', name: 'Criança', avatar: '🦁', sensitivities: [] };
+  const safeRewards = Array.isArray(rewards) ? rewards : [];
+
   const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'tasks', 'rewards', 'report'
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+  const [showEditTaskModal, setShowEditTaskModal] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [taskToDelete, setTaskToDelete] = useState(null);
   const [showNewRewardModal, setShowNewRewardModal] = useState(false);
 
   // New task form state
   const [taskForm, setTaskForm] = useState({
+    title: '',
+    time: '09:00',
+    durationMin: 10,
+    stars: 10,
+    category: 'Geral',
+    sensoryLevel: 'baixo',
+    sensoryTip: ''
+  });
+
+  // Edit task form state
+  const [editTaskForm, setEditTaskForm] = useState({
     title: '',
     time: '09:00',
     durationMin: 10,
@@ -42,7 +63,7 @@ export default function ParentsArea({
     icon: 'Gift'
   });
 
-  const pendingTasks = tasks.filter((t) => t.status === 'completed_pending_approval');
+  const pendingTasks = safeTasks.filter((t) => t && t.status === 'completed_pending_approval');
 
   const handleCreateTask = (e) => {
     e.preventDefault();
@@ -51,7 +72,7 @@ export default function ParentsArea({
     onAddTask({
       ...taskForm,
       id: 'task-' + Date.now(),
-      childId: activeChild.id,
+      childId: safeChild.id,
       status: 'todo',
       durationMin: Number(taskForm.durationMin),
       stars: Number(taskForm.stars),
@@ -69,6 +90,43 @@ export default function ParentsArea({
     });
     setShowNewTaskModal(false);
     sensoryAudio.playPop();
+  };
+
+  const handleOpenEditModal = (task) => {
+    setEditingTask(task);
+    setEditTaskForm({
+      title: task.title || '',
+      time: task.time || '09:00',
+      durationMin: task.durationMin || 10,
+      stars: task.stars || 10,
+      category: task.category || 'Geral',
+      sensoryLevel: task.sensoryLevel || 'baixo',
+      sensoryTip: task.sensoryTip || ''
+    });
+    setShowEditTaskModal(true);
+    sensoryAudio.playPop();
+  };
+
+  const handleSaveEditTask = (e) => {
+    e.preventDefault();
+    if (!editTaskForm.title.trim()) return;
+    if (!editingTask) return;
+
+    onUpdateTask(editingTask.id, {
+      ...editTaskForm,
+      stars: Math.max(1, Number(editTaskForm.stars)),
+      durationMin: Math.max(1, Number(editTaskForm.durationMin))
+    });
+
+    setShowEditTaskModal(false);
+    setEditingTask(null);
+  };
+
+  const handleConfirmDelete = () => {
+    if (taskToDelete) {
+      onDeleteTask(taskToDelete.id);
+      setTaskToDelete(null);
+    }
   };
 
   const handleCreateReward = (e) => {
@@ -97,31 +155,31 @@ export default function ParentsArea({
       <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-14 h-14 rounded-2xl bg-sky-100 flex items-center justify-center text-3xl shadow-inner">
-            {activeChild.avatar}
+            {safeChild.avatar}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-black text-slate-800">{activeChild.name}</h3>
+              <h3 className="text-lg font-black text-slate-800">{safeChild.name}</h3>
               <span className="text-xs font-extrabold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200">
-                {activeChild.diagnosis}
+                {safeChild.diagnosis}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Sensibilidades: {activeChild.sensitivities?.join(' • ') || 'Nenhuma registrada'}
+              Sensibilidades: {safeChild.sensitivities?.join(' • ') || 'Nenhuma registrada'}
             </p>
           </div>
         </div>
 
         {/* Switch child selector */}
-        {children.length > 1 && (
+        {safeChildren.length > 1 && (
           <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200">
             <span className="text-xs font-bold text-slate-400 pl-2">Filho:</span>
-            {children.map((c) => (
+            {safeChildren.map((c) => (
               <button
                 key={c.id}
                 onClick={() => onSwitchChild(c.id)}
                 className={`py-1.5 px-3 rounded-xl text-xs font-black transition ${
-                  c.id === activeChild.id
+                  c.id === safeChild.id
                     ? 'bg-sky-600 text-white shadow-sm'
                     : 'text-slate-600 hover:bg-slate-200'
                 }`}
@@ -156,7 +214,7 @@ export default function ParentsArea({
           }`}
         >
           <Clock size={16} />
-          Todas as Tarefas ({tasks.length})
+          Todas as Tarefas ({safeTasks.length})
         </button>
 
         <button
@@ -168,7 +226,7 @@ export default function ParentsArea({
           }`}
         >
           <Award size={16} />
-          Loja de Prêmios ({rewards.length})
+          Loja de Prêmios ({safeRewards.length})
         </button>
 
         <button
@@ -225,7 +283,7 @@ export default function ParentsArea({
                         <h4 className="font-extrabold text-slate-800 text-base">{task.title}</h4>
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        {activeChild.name} marcou esta tarefa como concluída!
+                        {safeChild.name} marcou esta tarefa como concluída!
                       </p>
                     </div>
                   </div>
@@ -262,49 +320,77 @@ export default function ParentsArea({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex items-start justify-between gap-3"
-              >
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-black text-sky-600 bg-sky-50 px-2.5 py-0.5 rounded-full">
-                      {task.time} ({task.durationMin} min)
-                    </span>
-                    <span
-                      className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                        task.sensoryLevel === 'baixo'
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : task.sensoryLevel === 'medio'
-                          ? 'bg-amber-50 text-amber-700'
-                          : 'bg-rose-50 text-rose-700'
-                      }`}
-                    >
-                      Estímulo {task.sensoryLevel}
+            {safeTasks.length === 0 ? (
+              <div className="col-span-full bg-white rounded-3xl p-8 text-center border border-slate-100">
+                <p className="text-slate-500 font-medium text-sm">
+                  Nenhuma rotina cadastrada para esta criança. Clique em "Cadastrar Nova Tarefa" para começar.
+                </p>
+              </div>
+            ) : (
+              safeTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex items-start justify-between gap-3 hover:border-sky-100 transition"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-xs font-black text-sky-600 bg-sky-50 px-2.5 py-0.5 rounded-full">
+                        {task.time} ({task.durationMin} min)
+                      </span>
+                      <span
+                        className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                          task.sensoryLevel === 'baixo'
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : task.sensoryLevel === 'medio'
+                            ? 'bg-amber-50 text-amber-700'
+                            : 'bg-rose-50 text-rose-700'
+                        }`}
+                      >
+                        Estímulo {task.sensoryLevel}
+                      </span>
+                    </div>
+
+                    <h5 className="font-extrabold text-slate-800 text-base truncate">{task.title}</h5>
+                    {task.sensoryTip && (
+                      <p className="text-xs text-slate-500 mt-1 italic line-clamp-2">
+                        💡 Dica sensorial: {task.sensoryTip}
+                      </p>
+                    )}
+                    <span className="inline-block mt-2 text-xs font-black text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full">
+                      Vale +{task.stars} ⭐
                     </span>
                   </div>
 
-                  <h5 className="font-extrabold text-slate-800 text-base">{task.title}</h5>
-                  {task.sensoryTip && (
-                    <p className="text-xs text-slate-500 mt-1 italic">
-                      💡 Dica sensorial: {task.sensoryTip}
-                    </p>
-                  )}
-                  <span className="inline-block mt-2 text-xs font-black text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full">
-                    Vale +{task.stars} ⭐
-                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => handleOpenEditModal(task)}
+                      className="p-2 text-slate-400 hover:text-sky-600 rounded-xl hover:bg-sky-50 transition"
+                      title="Editar rotina (título e estrelas)"
+                    >
+                      <Pencil size={17} />
+                    </button>
+                    <button
+                      onClick={() => setTaskToDelete(task)}
+                      className="p-2 text-slate-400 hover:text-rose-500 rounded-xl hover:bg-rose-50 transition"
+                      title="Excluir rotina"
+                    >
+                      <Trash2 size={17} />
+                    </button>
+                  </div>
                 </div>
+              ))
+            )}
+          </div>
 
-                <button
-                  onClick={() => onDeleteTask(task.id)}
-                  className="p-2 text-slate-300 hover:text-rose-500 rounded-xl hover:bg-rose-50 transition"
-                  title="Excluir tarefa"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
+          {/* Cache persistence status banner */}
+          <div className="bg-sky-50/70 border border-sky-100 rounded-2xl p-3 flex items-center justify-between text-xs text-sky-800">
+            <span className="flex items-center gap-2 font-bold">
+              <Database size={15} className="text-sky-600" />
+              Rotinas salvas automaticamente no cache do navegador
+            </span>
+            <span className="text-[10px] font-bold text-sky-600 bg-white/80 px-2 py-0.5 rounded-lg border border-sky-100">
+              Offline-ready
+            </span>
           </div>
         </div>
       )}
@@ -328,7 +414,7 @@ export default function ParentsArea({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {rewards.map((r) => (
+            {safeRewards.map((r) => (
               <div
                 key={r.id}
                 className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex items-start justify-between gap-3"
@@ -358,7 +444,7 @@ export default function ParentsArea({
 
       {/* Tab: Scientific Weekly Report */}
       {activeTab === 'report' && (
-        <WeeklyReport child={activeChild} emotionLogs={emotionLogs} />
+        <WeeklyReport child={safeChild} emotionLogs={emotionLogs} />
       )}
 
       {/* Modal: New Task */}
@@ -426,11 +512,27 @@ export default function ParentsArea({
                   <input
                     type="number"
                     min="1"
-                    max="50"
+                    max="100"
                     value={taskForm.stars}
                     onChange={(e) => setTaskForm({ ...taskForm, stars: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500"
                   />
+                  <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                    {[5, 10, 15, 20].map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setTaskForm({ ...taskForm, stars: val })}
+                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg border transition ${
+                          Number(taskForm.stars) === val
+                            ? 'bg-amber-500 text-white border-amber-500'
+                            : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                        }`}
+                      >
+                        {val}⭐
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
@@ -471,6 +573,222 @@ export default function ParentsArea({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Routine (Modify Title & Stars) */}
+      {showEditTaskModal && editingTask && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-sky-100 max-h-[92vh] overflow-y-auto animate-fade-in">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center shadow-inner">
+                  <Pencil size={20} />
+                </div>
+                <div>
+                  <h4 className="font-black text-slate-800 text-lg leading-tight">Editar Rotina</h4>
+                  <p className="text-xs text-slate-400">Modifique o título e as estrelas da atividade</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowEditTaskModal(false);
+                  setEditingTask(null);
+                }}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-full"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditTask} className="space-y-4">
+              {/* Título da Rotina */}
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1">
+                  Título da Rotina <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Escovar os dentes"
+                  value={editTaskForm.title}
+                  onChange={(e) => setEditTaskForm({ ...editTaskForm, title: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-800 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition"
+                />
+              </div>
+
+              {/* Quantas Estrelas cada rotina pode dar ao ser finalizada com sucesso */}
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-black text-amber-900 flex items-center gap-1.5">
+                    <Star size={16} className="text-amber-500 fill-amber-400" />
+                    Estrelas ao concluir com sucesso
+                  </label>
+                  <span className="text-xs font-black bg-amber-400 text-slate-900 px-2.5 py-0.5 rounded-full shadow-sm">
+                    +{editTaskForm.stars} ⭐
+                  </span>
+                </div>
+
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  required
+                  value={editTaskForm.stars}
+                  onChange={(e) => setEditTaskForm({ ...editTaskForm, stars: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-amber-300 text-sm font-black text-amber-950 focus:outline-none focus:border-amber-500 bg-white"
+                />
+
+                {/* Star shortcut chips */}
+                <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
+                  <span className="text-[10px] font-bold text-amber-800">Atalhos rápidos:</span>
+                  {[5, 10, 15, 20, 25, 30].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setEditTaskForm({ ...editTaskForm, stars: val })}
+                      className={`text-[11px] font-black px-2.5 py-1 rounded-xl transition ${
+                        Number(editTaskForm.stars) === val
+                          ? 'bg-amber-500 text-white shadow'
+                          : 'bg-white text-amber-800 border border-amber-200 hover:bg-amber-100'
+                      }`}
+                    >
+                      {val} ⭐
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Horário & Duração */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">
+                    Horário previsto
+                  </label>
+                  <input
+                    type="time"
+                    value={editTaskForm.time}
+                    onChange={(e) => setEditTaskForm({ ...editTaskForm, time: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">
+                    Timer Visual (Minutos)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="120"
+                    value={editTaskForm.durationMin}
+                    onChange={(e) => setEditTaskForm({ ...editTaskForm, durationMin: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              {/* Nível de Estímulo & Categoria */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">
+                    Nível de Estímulo
+                  </label>
+                  <select
+                    value={editTaskForm.sensoryLevel}
+                    onChange={(e) => setEditTaskForm({ ...editTaskForm, sensoryLevel: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500 bg-white"
+                  >
+                    <option value="baixo">Baixo (Tranquilo)</option>
+                    <option value="medio">Médio (Atenção)</option>
+                    <option value="alto">Alto (Exigente)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">
+                    Categoria
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Higiene, Escola"
+                    value={editTaskForm.category}
+                    onChange={(e) => setEditTaskForm({ ...editTaskForm, category: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              {/* Dica Sensorial */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">
+                  Dica de Adaptação Sensorial (Opcional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Avisar com 5 min de antecedência"
+                  value={editTaskForm.sensoryTip}
+                  onChange={(e) => setEditTaskForm({ ...editTaskForm, sensoryTip: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              {/* Botões de Ação */}
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditTaskModal(false);
+                    setEditingTask(null);
+                  }}
+                  className="w-1/3 py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="w-2/3 py-3 px-5 rounded-2xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-sky-200 transition flex items-center justify-center gap-2"
+                >
+                  <Check size={18} /> Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Delete Confirmation */}
+      {taskToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-rose-100 text-center animate-fade-in">
+            <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 mx-auto flex items-center justify-center mb-3">
+              <Trash2 size={26} />
+            </div>
+
+            <h4 className="font-black text-slate-800 text-base mb-1">
+              Excluir Rotina?
+            </h4>
+            <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+              Deseja realmente remover a rotina <strong className="text-slate-800">"{taskToDelete.title}"</strong>? Ela deixará de aparecer no painel da criança.
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setTaskToDelete(null)}
+                className="py-2.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="py-2.5 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-rose-200 transition active:scale-95"
+              >
+                Sim, Excluir
+              </button>
+            </div>
           </div>
         </div>
       )}

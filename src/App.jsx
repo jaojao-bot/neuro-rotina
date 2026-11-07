@@ -8,7 +8,7 @@ import ParentsArea from './components/ParentsArea';
 import InstallPromptModal from './components/InstallPromptModal';
 import { 
   INITIAL_CHILDREN, INITIAL_TASKS, INITIAL_REWARDS, INITIAL_EMOTION_LOGS,
-  loadData, saveData 
+  STORAGE_KEYS, loadData, saveData 
 } from './utils/storage';
 import { sensoryAudio } from './utils/audio';
 
@@ -21,30 +21,51 @@ export default function App() {
 
   // Core App State persisted in localStorage
   const [childrenList, setChildrenList] = useState(() => 
-    loadData('neurorotina_children', INITIAL_CHILDREN)
+    loadData(STORAGE_KEYS.CHILDREN, INITIAL_CHILDREN)
   );
   const [activeChildId, setActiveChildId] = useState(() => 
-    loadData('neurorotina_active_child_id', INITIAL_CHILDREN[0].id)
+    loadData(STORAGE_KEYS.ACTIVE_CHILD_ID, INITIAL_CHILDREN[0].id)
   );
   const [tasksList, setTasksList] = useState(() => 
-    loadData('neurorotina_tasks', INITIAL_TASKS)
+    loadData(STORAGE_KEYS.TASKS, INITIAL_TASKS)
   );
   const [rewardsList, setRewardsList] = useState(() => 
-    loadData('neurorotina_rewards', INITIAL_REWARDS)
+    loadData(STORAGE_KEYS.REWARDS, INITIAL_REWARDS)
   );
   const [emotionLogs, setEmotionLogs] = useState(() => 
-    loadData('neurorotina_emotion_logs', INITIAL_EMOTION_LOGS)
+    loadData(STORAGE_KEYS.EMOTION_LOGS, INITIAL_EMOTION_LOGS)
   );
 
   // Sync state to LocalStorage
-  useEffect(() => saveData('neurorotina_children', childrenList), [childrenList]);
-  useEffect(() => saveData('neurorotina_active_child_id', activeChildId), [activeChildId]);
-  useEffect(() => saveData('neurorotina_tasks', tasksList), [tasksList]);
-  useEffect(() => saveData('neurorotina_rewards', rewardsList), [rewardsList]);
-  useEffect(() => saveData('neurorotina_emotion_logs', emotionLogs), [emotionLogs]);
+  useEffect(() => {
+    saveData(STORAGE_KEYS.CHILDREN, childrenList);
+  }, [childrenList]);
 
-  const activeChild = childrenList.find((c) => c.id === activeChildId) || childrenList[0];
-  const activeChildTasks = tasksList.filter((t) => t.childId === activeChildId);
+  useEffect(() => {
+    saveData(STORAGE_KEYS.ACTIVE_CHILD_ID, activeChildId);
+  }, [activeChildId]);
+
+  useEffect(() => {
+    saveData(STORAGE_KEYS.TASKS, tasksList);
+  }, [tasksList]);
+
+  useEffect(() => {
+    saveData(STORAGE_KEYS.REWARDS, rewardsList);
+  }, [rewardsList]);
+
+  useEffect(() => {
+    saveData(STORAGE_KEYS.EMOTION_LOGS, emotionLogs);
+  }, [emotionLogs]);
+
+  const safeChildren = Array.isArray(childrenList) && childrenList.length > 0
+    ? childrenList
+    : INITIAL_CHILDREN;
+  const activeChild = safeChildren.find((c) => c && c.id === activeChildId) || safeChildren[0] || INITIAL_CHILDREN[0];
+
+  const safeTasks = Array.isArray(tasksList) ? tasksList : INITIAL_TASKS;
+  const activeChildTasks = safeTasks.filter((t) => t && t.childId === activeChild.id);
+  const safeRewards = Array.isArray(rewardsList) ? rewardsList : INITIAL_REWARDS;
+  const safeEmotionLogs = Array.isArray(emotionLogs) ? emotionLogs : INITIAL_EMOTION_LOGS;
 
   // Handlers
   const handleModeSwitch = (targetMode) => {
@@ -131,11 +152,21 @@ export default function App() {
   // Parent adds task
   const handleAddTask = (newTask) => {
     setTasksList((prev) => [newTask, ...prev]);
+    sensoryAudio.playPop();
+  };
+
+  // Parent updates task (modify title, stars, etc.)
+  const handleUpdateTask = (taskId, updatedData) => {
+    setTasksList((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, ...updatedData } : t))
+    );
+    sensoryAudio.playSparkle();
   };
 
   // Parent deletes task
   const handleDeleteTask = (taskId) => {
     setTasksList((prev) => prev.filter((t) => t.id !== taskId));
+    sensoryAudio.playPop();
   };
 
   // Parent adds reward
@@ -242,24 +273,25 @@ export default function App() {
           <KidsArea
             child={activeChild}
             tasks={activeChildTasks}
-            rewards={rewardsList}
+            rewards={safeRewards}
             onCompleteTask={handleCompleteTask}
             onClaimReward={handleClaimReward}
             onSelectEmotion={handleSelectEmotion}
           />
         ) : (
           <ParentsArea
-            children={childrenList}
+            children={safeChildren}
             activeChild={activeChild}
             tasks={activeChildTasks}
-            rewards={rewardsList}
+            rewards={safeRewards}
             onApproveTask={handleApproveTask}
             onAddTask={handleAddTask}
+            onUpdateTask={handleUpdateTask}
             onDeleteTask={handleDeleteTask}
             onAddReward={handleAddReward}
             onDeleteReward={handleDeleteReward}
             onSwitchChild={setActiveChildId}
-            emotionLogs={emotionLogs}
+            emotionLogs={safeEmotionLogs}
           />
         )}
       </main>
