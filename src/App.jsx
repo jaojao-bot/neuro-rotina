@@ -222,10 +222,12 @@ export default function App() {
     );
   };
 
-  const handleUpdateChildName = (childId, name) => {
+  const handleUpdateChildData = (childId, { name, age, diagnosis }) => {
     setChildrenList((prev) =>
       prev.map((child) =>
-        child.id === childId ? { ...child, name: name.trim() } : child
+        child.id === childId
+          ? { ...child, name: name.trim(), age, diagnosis: diagnosis.trim() }
+          : child
       )
     );
   };
@@ -369,7 +371,7 @@ export default function App() {
             onAddChild={handleAddChild}
             onAddChildSensitivity={handleAddChildSensitivity}
             onDeleteChildSensitivity={handleDeleteChildSensitivity}
-            onUpdateChildName={handleUpdateChildName}
+            onUpdateChildData={handleUpdateChildData}
             onDeleteChild={handleDeleteChild}
             emotionLogs={safeEmotionLogs}
           />

@@ -20,7 +20,7 @@ O aplicativo é uma ferramenta de organização e demonstração. Não diagnosti
 
 A entrada é solicitada por um PIN demonstrativo. A área permite:
 
-- Criar perfis de criança com nome obrigatório e idade e diagnóstico opcionais, editar o nome do perfil selecionado e alternar entre perfis.
+- Criar perfis de criança com nome obrigatório e idade e diagnóstico opcionais, editar os dados do perfil selecionado (nome, idade e diagnóstico) e alternar entre perfis.
 - Adicionar e remover sensibilidades do perfil selecionado. Sensibilidades são descrições livres, não avaliações clínicas.
 - Excluir um perfil após confirmação. A exclusão também remove as tarefas vinculadas e o saldo daquele perfil; não é possível excluir o último perfil.
 - Aprovar tarefas pendentes e creditar as estrelas correspondentes.

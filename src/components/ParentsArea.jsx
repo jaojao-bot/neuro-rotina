@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  Plus, Check, X, ShieldAlert, Star, Clock, Sparkles, UserPlus, 
+  Plus, Minus, Check, X, ShieldAlert, Star, Clock, Sparkles, UserPlus, 
   Trash2, Award, BarChart3, Settings, CheckCircle2, AlertCircle, Heart,
   Pencil, Database
 } from 'lucide-react';
@@ -22,7 +22,7 @@ export default function ParentsArea({
   onAddChild,
   onAddChildSensitivity,
   onDeleteChildSensitivity,
-  onUpdateChildName,
+  onUpdateChildData,
   onDeleteChild,
   emotionLogs = []
 }) {
@@ -44,6 +44,7 @@ export default function ParentsArea({
   const [childAgeInput, setChildAgeInput] = useState('');
   const [childAgeError, setChildAgeError] = useState(false);
   const [childDiagnosisInput, setChildDiagnosisInput] = useState('');
+  const [showChildDiagnosisInput, setShowChildDiagnosisInput] = useState(false);
   const [showDeleteChildConfirm, setShowDeleteChildConfirm] = useState(false);
   const [showSensitivityForm, setShowSensitivityForm] = useState(false);
   const [sensitivityInput, setSensitivityInput] = useState('');
@@ -81,7 +82,7 @@ export default function ParentsArea({
 
   const pendingTasks = safeTasks.filter((t) => t && t.status === 'completed_pending_approval');
 
-  const handleSaveChildName = (e) => {
+  const handleSaveChildData = (e) => {
     e.preventDefault();
     const name = childNameInput.trim();
     if (!name) {
@@ -89,20 +90,24 @@ export default function ParentsArea({
       return;
     }
 
-    if (childFormMode === 'add') {
-      const age = childAgeInput.trim() ? Number(childAgeInput) : null;
-      if (age !== null && (!Number.isInteger(age) || age < 1)) {
-        setChildAgeError(true);
-        return;
-      }
+    const age = childAgeInput.trim() ? Number(childAgeInput) : null;
+    if (age !== null && (!Number.isInteger(age) || age < 1)) {
+      setChildAgeError(true);
+      return;
+    }
 
+    if (childFormMode === 'add') {
       onAddChild({
         name,
         age,
         diagnosis: childDiagnosisInput.trim()
       });
     } else if (childFormMode === 'edit') {
-      onUpdateChildName(safeChild.id, name);
+      onUpdateChildData(safeChild.id, {
+        name,
+        age,
+        diagnosis: childDiagnosisInput.trim()
+      });
     }
 
     setChildFormMode(null);
@@ -111,6 +116,7 @@ export default function ParentsArea({
     setChildAgeInput('');
     setChildAgeError(false);
     setChildDiagnosisInput('');
+    setShowChildDiagnosisInput(false);
   };
 
   const handleAddSensitivity = (e) => {
@@ -295,6 +301,10 @@ export default function ParentsArea({
                 onClick={() => {
                   setChildNameInput('');
                   setChildNameError(false);
+                  setChildAgeInput('');
+                  setChildAgeError(false);
+                  setChildDiagnosisInput('');
+                  setShowChildDiagnosisInput(false);
                   setChildFormMode('add');
                 }}
                 className="py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black flex items-center gap-1.5 transition"
@@ -306,11 +316,19 @@ export default function ParentsArea({
                 onClick={() => {
                   setChildNameInput(safeChild.name || '');
                   setChildNameError(false);
+                  setChildAgeInput(
+                    Number.isInteger(safeChild.age) && safeChild.age > 0
+                      ? String(safeChild.age)
+                      : ''
+                  );
+                  setChildAgeError(false);
+                  setChildDiagnosisInput(safeChild.diagnosis || '');
+                  setShowChildDiagnosisInput(Boolean(safeChild.diagnosis));
                   setChildFormMode('edit');
                 }}
-                className="py-2 px-3 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-black flex items-center gap-1.5 transition"
+                className="py-2 px-3 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-black flex items-center gap-1.5 transition focus:outline-none focus:ring-2 focus:ring-sky-300"
               >
-                <Pencil size={14} /> Editar nome
+                <Pencil size={14} /> Editar Dados
               </button>
               <button
                 type="button"
@@ -351,7 +369,7 @@ export default function ParentsArea({
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-sky-100">
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-black text-slate-800 text-lg">
-                {childFormMode === 'add' ? 'Adicionar criança' : 'Editar nome'}
+                {childFormMode === 'add' ? 'Adicionar criança' : 'Editar dados'}
               </h4>
               <button
                 type="button"
@@ -363,7 +381,7 @@ export default function ParentsArea({
               </button>
             </div>
 
-            <form onSubmit={handleSaveChildName} noValidate className="space-y-4">
+            <form onSubmit={handleSaveChildData} noValidate className="space-y-4">
               <div>
                 <label htmlFor="child-name" className="block text-xs font-bold text-slate-600 mb-1">
                   Nome
@@ -390,7 +408,7 @@ export default function ParentsArea({
                 )}
               </div>
 
-              {childFormMode === 'add' && (
+              {childFormMode === 'add' ? (
                 <>
                   <div>
                     <label htmlFor="child-age" className="block text-xs font-bold text-slate-600 mb-1">
@@ -434,6 +452,88 @@ export default function ParentsArea({
                     </p>
                   </div>
                 </>
+              ) : (
+                <>
+                  <div>
+                    <span className="block text-xs font-bold text-slate-600 mb-2">
+                      Idade <span className="font-normal text-slate-400">(opcional)</span>
+                    </span>
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentAge = Number(childAgeInput);
+                          if (Number.isInteger(currentAge) && currentAge > 1) {
+                            setChildAgeInput(String(currentAge - 1));
+                            setChildAgeError(false);
+                          }
+                        }}
+                        disabled={!childAgeInput || Number(childAgeInput) <= 1}
+                        aria-label="Diminuir idade"
+                        className="w-11 h-11 rounded-full border border-sky-200 bg-sky-50 text-sky-700 flex items-center justify-center hover:bg-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Minus size={18} />
+                      </button>
+                      <span className="min-w-16 text-center text-lg font-black text-slate-800" aria-live="polite">
+                        {childAgeInput || '—'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentAge = Number(childAgeInput);
+                          setChildAgeInput(String(Number.isInteger(currentAge) && currentAge > 0 ? currentAge + 1 : 1));
+                          setChildAgeError(false);
+                        }}
+                        aria-label="Aumentar idade"
+                        className="w-11 h-11 rounded-full border border-sky-200 bg-sky-50 text-sky-700 flex items-center justify-center hover:bg-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      >
+                        <Plus size={18} />
+                      </button>
+                    </div>
+                    {childAgeError && (
+                      <p id="child-age-error" className="text-xs font-bold text-rose-600 mt-1">
+                        Informe uma idade inteira maior que zero.
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label htmlFor="child-diagnosis" className="block text-xs font-bold text-slate-600">
+                        Diagnóstico <span className="font-normal text-slate-400">(opcional)</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (showChildDiagnosisInput) {
+                            setChildDiagnosisInput('');
+                            setShowChildDiagnosisInput(false);
+                          } else {
+                            setShowChildDiagnosisInput(true);
+                          }
+                        }}
+                        className="text-xs font-bold text-sky-700 hover:text-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-lg px-1"
+                      >
+                        {showChildDiagnosisInput ? 'Remover diagnóstico' : 'Adicionar diagnóstico'}
+                      </button>
+                    </div>
+                    {showChildDiagnosisInput && (
+                      <>
+                        <input
+                          id="child-diagnosis"
+                          type="text"
+                          maxLength={100}
+                          value={childDiagnosisInput}
+                          onChange={(e) => setChildDiagnosisInput(e.target.value)}
+                          className="mt-2 w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                        />
+                        <p className="text-[11px] text-slate-400 mt-1">
+                          Esse dado é opcional e fica salvo neste navegador.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </>
               )}
 
               <div className="flex gap-3">
@@ -448,7 +548,7 @@ export default function ParentsArea({
                   type="submit"
                   className="flex-1 py-3 px-4 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-black text-xs transition"
                 >
-                  {childFormMode === 'add' ? 'Criar perfil' : 'Salvar nome'}
+                  {childFormMode === 'add' ? 'Criar perfil' : 'Salvar dados'}
                 </button>
               </div>
             </form>
