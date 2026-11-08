@@ -2,16 +2,24 @@ import React, { useState } from 'react';
 import { 
   Plus, Minus, Check, X, ShieldAlert, Star, Clock, Sparkles, UserPlus, 
   Trash2, Award, BarChart3, Settings, CheckCircle2, AlertCircle, Heart,
-  Pencil, Database
+  Pencil, Database, ChevronDown
 } from 'lucide-react';
 import WeeklyReport from './WeeklyReport';
 import { sensoryAudio } from '../utils/audio';
+
+const STAR_OPTIONS = Array.from({ length: 50 }, (_, index) => index + 1);
 
 const normalizeDurationMinutes = (duration) => {
   if (duration === '' || duration === null) return 10;
   const parsedDuration = Number(duration);
   if (!Number.isFinite(parsedDuration)) return 10;
   return Math.min(120, Math.max(1, Math.round(parsedDuration)));
+};
+
+const normalizeTaskStars = (stars) => {
+  const parsedStars = Number(stars);
+  if (!Number.isFinite(parsedStars)) return 10;
+  return Math.min(50, Math.max(1, Math.round(parsedStars)));
 };
 
 export default function ParentsArea({
@@ -173,7 +181,7 @@ export default function ParentsArea({
       status: 'todo',
       time: taskForm.time.trim(),
       durationMin: normalizeDurationMinutes(taskForm.durationMin),
-      stars: Number(taskForm.stars),
+      stars: normalizeTaskStars(taskForm.stars),
       icon: 'Sparkles'
     });
 
@@ -196,7 +204,7 @@ export default function ParentsArea({
       title: task.title || '',
       time: task.time || '',
       durationMin: normalizeDurationMinutes(task.durationMin || 10),
-      stars: task.stars || 10,
+      stars: normalizeTaskStars(task.stars || 10),
       category: task.category || 'Geral',
       sensoryLevel: task.sensoryLevel || 'baixo',
       sensoryTip: task.sensoryTip || ''
@@ -213,7 +221,7 @@ export default function ParentsArea({
     onUpdateTask(editingTask.id, {
       ...editTaskForm,
       time: editTaskForm.time.trim(),
-      stars: Math.max(1, Number(editTaskForm.stars)),
+      stars: normalizeTaskStars(editTaskForm.stars),
       durationMin: normalizeDurationMinutes(editTaskForm.durationMin)
     });
 
@@ -953,17 +961,30 @@ export default function ParentsArea({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1">
                     Horário da rotina <span className="font-normal text-slate-400">(opcional)</span>
                   </label>
-                  <input
-                    type="time"
-                    value={taskForm.time}
-                    onChange={(e) => setTaskForm({ ...taskForm, time: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="time"
+                      value={taskForm.time}
+                      onChange={(e) => setTaskForm({ ...taskForm, time: e.target.value })}
+                      aria-label="Horário da rotina (opcional)"
+                      className="min-w-0 flex-1 px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setTaskForm({ ...taskForm, time: '' })}
+                      disabled={!taskForm.time}
+                      aria-label="Limpar horário da rotina"
+                      title="Limpar horário"
+                      className="shrink-0 p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -982,35 +1003,29 @@ export default function ParentsArea({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1">
                     Valor em Estrelas ⭐
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={taskForm.stars}
-                    onChange={(e) => setTaskForm({ ...taskForm, stars: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500"
-                  />
-                  <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-                    {[5, 10, 15, 20].map((val) => (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => setTaskForm({ ...taskForm, stars: val })}
-                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg border transition ${
-                          Number(taskForm.stars) === val
-                            ? 'bg-amber-500 text-white border-amber-500'
-                            : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                        }`}
-                      >
-                        {val}⭐
-                      </button>
-                    ))}
+                  <div className="relative">
+                    <select
+                      value={taskForm.stars}
+                      onChange={(e) => setTaskForm({ ...taskForm, stars: e.target.value })}
+                      aria-label="Valor em estrelas"
+                      className="w-full appearance-none px-4 py-2.5 pr-10 rounded-2xl border border-amber-200 bg-amber-50 text-sm font-bold text-amber-800 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                    >
+                      {STAR_OPTIONS.map((value) => (
+                        <option key={value} value={value}>{value} ⭐</option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      size={16}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-amber-700"
+                    />
                   </div>
+                  <p className="mt-1 text-[11px] text-slate-500">Escolha de 1 a 50 estrelas.</p>
                 </div>
 
                 <div>
@@ -1108,48 +1123,51 @@ export default function ParentsArea({
                   </span>
                 </div>
 
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  required
-                  value={editTaskForm.stars}
-                  onChange={(e) => setEditTaskForm({ ...editTaskForm, stars: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-amber-300 text-sm font-black text-amber-950 focus:outline-none focus:border-amber-500 bg-white"
-                />
-
-                {/* Star shortcut chips */}
-                <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
-                  <span className="text-[10px] font-bold text-amber-800">Atalhos rápidos:</span>
-                  {[5, 10, 15, 20, 25, 30].map((val) => (
-                    <button
-                      key={val}
-                      type="button"
-                      onClick={() => setEditTaskForm({ ...editTaskForm, stars: val })}
-                      className={`text-[11px] font-black px-2.5 py-1 rounded-xl transition ${
-                        Number(editTaskForm.stars) === val
-                          ? 'bg-amber-500 text-white shadow'
-                          : 'bg-white text-amber-800 border border-amber-200 hover:bg-amber-100'
-                      }`}
-                    >
-                      {val} ⭐
-                    </button>
-                  ))}
+                <div className="relative">
+                  <select
+                    value={editTaskForm.stars}
+                    onChange={(e) => setEditTaskForm({ ...editTaskForm, stars: e.target.value })}
+                    aria-label="Estrelas ao concluir com sucesso"
+                    className="w-full appearance-none px-4 py-2.5 pr-10 rounded-xl border border-amber-300 bg-white text-sm font-black text-amber-950 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                  >
+                    {STAR_OPTIONS.map((value) => (
+                      <option key={value} value={value}>{value} ⭐</option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-amber-700"
+                  />
                 </div>
+                <p className="mt-1.5 text-[11px] text-amber-800">Escolha de 1 a 50 estrelas.</p>
               </div>
 
               {/* Horário & Duração */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1">
                     Horário previsto <span className="font-normal text-slate-400">(opcional)</span>
                   </label>
-                  <input
-                    type="time"
-                    value={editTaskForm.time}
-                    onChange={(e) => setEditTaskForm({ ...editTaskForm, time: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="time"
+                      value={editTaskForm.time}
+                      onChange={(e) => setEditTaskForm({ ...editTaskForm, time: e.target.value })}
+                      aria-label="Horário previsto (opcional)"
+                      className="min-w-0 flex-1 px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditTaskForm({ ...editTaskForm, time: '' })}
+                      disabled={!editTaskForm.time}
+                      aria-label="Limpar horário da rotina"
+                      title="Limpar horário"
+                      className="shrink-0 p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 <div>

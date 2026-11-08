@@ -24,7 +24,7 @@ A entrada é solicitada por um PIN demonstrativo. A área permite:
 - Adicionar e remover sensibilidades do perfil selecionado. Sensibilidades são descrições livres, não avaliações clínicas.
 - Excluir um perfil após confirmação. A exclusão também remove as tarefas vinculadas e o saldo daquele perfil; não é possível excluir o último perfil.
 - Aprovar tarefas pendentes e creditar as estrelas correspondentes.
-- Criar, editar e excluir tarefas. Cada tarefa pode ter título, horário opcional, duração de 1 a 120 minutos, quantidade de estrelas, categoria, nível de estímulo (baixo, médio ou alto) e dica de adaptação sensorial.
+- Criar, editar e excluir tarefas. Cada tarefa pode ter título, horário opcional, duração de 1 a 120 minutos, recompensa selecionável de 1 a 50 estrelas, categoria, nível de estímulo (baixo, médio ou alto) e dica de adaptação sensorial.
 - Criar e excluir prêmios, definindo título, custo em estrelas e descrição.
 - Consultar o painel de relatório demonstrativo.
 
