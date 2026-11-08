@@ -290,9 +290,6 @@ export default function App() {
                   Kids
                 </span>
               </div>
-              <span className="text-[10px] font-extrabold text-teal-600 block mt-0.5">
-                Projeto Feira de Ciências • TEA/TDAH
-              </span>
             </div>
           </div>
 
