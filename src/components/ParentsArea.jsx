@@ -7,6 +7,13 @@ import {
 import WeeklyReport from './WeeklyReport';
 import { sensoryAudio } from '../utils/audio';
 
+const normalizeDurationMinutes = (duration) => {
+  if (duration === '' || duration === null) return 10;
+  const parsedDuration = Number(duration);
+  if (!Number.isFinite(parsedDuration)) return 10;
+  return Math.min(120, Math.max(1, Math.round(parsedDuration)));
+};
+
 export default function ParentsArea({
   children = [],
   activeChild,
@@ -53,7 +60,7 @@ export default function ParentsArea({
   // New task form state
   const [taskForm, setTaskForm] = useState({
     title: '',
-    time: '09:00',
+    time: '',
     durationMin: 10,
     stars: 10,
     category: 'Geral',
@@ -64,7 +71,7 @@ export default function ParentsArea({
   // Edit task form state
   const [editTaskForm, setEditTaskForm] = useState({
     title: '',
-    time: '09:00',
+    time: '',
     durationMin: 10,
     stars: 10,
     category: 'Geral',
@@ -164,14 +171,15 @@ export default function ParentsArea({
       id: 'task-' + Date.now(),
       childId: safeChild.id,
       status: 'todo',
-      durationMin: Number(taskForm.durationMin),
+      time: taskForm.time.trim(),
+      durationMin: normalizeDurationMinutes(taskForm.durationMin),
       stars: Number(taskForm.stars),
       icon: 'Sparkles'
     });
 
     setTaskForm({
       title: '',
-      time: '09:00',
+      time: '',
       durationMin: 10,
       stars: 10,
       category: 'Geral',
@@ -186,8 +194,8 @@ export default function ParentsArea({
     setEditingTask(task);
     setEditTaskForm({
       title: task.title || '',
-      time: task.time || '09:00',
-      durationMin: task.durationMin || 10,
+      time: task.time || '',
+      durationMin: normalizeDurationMinutes(task.durationMin || 10),
       stars: task.stars || 10,
       category: task.category || 'Geral',
       sensoryLevel: task.sensoryLevel || 'baixo',
@@ -204,8 +212,9 @@ export default function ParentsArea({
 
     onUpdateTask(editingTask.id, {
       ...editTaskForm,
+      time: editTaskForm.time.trim(),
       stars: Math.max(1, Number(editTaskForm.stars)),
-      durationMin: Math.max(1, Number(editTaskForm.durationMin))
+      durationMin: normalizeDurationMinutes(editTaskForm.durationMin)
     });
 
     setShowEditTaskModal(false);
@@ -744,7 +753,7 @@ export default function ParentsArea({
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                          {task.time}
+                          {task.time || 'Sem horário definido'}
                         </span>
                         <h4 className="font-extrabold text-slate-800 text-base">{task.title}</h4>
                       </div>
@@ -801,7 +810,9 @@ export default function ParentsArea({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="text-xs font-black text-sky-600 bg-sky-50 px-2.5 py-0.5 rounded-full">
-                        {task.time} ({task.durationMin} min)
+                        {task.time
+                          ? `${task.time} · ${task.durationMin} min`
+                          : `Sem horário definido · ${task.durationMin} min`}
                       </span>
                       <span
                         className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
@@ -945,7 +956,7 @@ export default function ParentsArea({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1">
-                    Horário da rotina
+                    Horário da rotina <span className="font-normal text-slate-400">(opcional)</span>
                   </label>
                   <input
                     type="time"
@@ -957,12 +968,13 @@ export default function ParentsArea({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1">
-                    Timer Visual (Minutos)
+                    Timer Visual (Minutos, até 120)
                   </label>
                   <input
                     type="number"
                     min="1"
-                    max="60"
+                    max="120"
+                    step="1"
                     value={taskForm.durationMin}
                     onChange={(e) => setTaskForm({ ...taskForm, durationMin: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500"
@@ -1130,7 +1142,7 @@ export default function ParentsArea({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1">
-                    Horário previsto
+                    Horário previsto <span className="font-normal text-slate-400">(opcional)</span>
                   </label>
                   <input
                     type="time"
@@ -1142,12 +1154,13 @@ export default function ParentsArea({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1">
-                    Timer Visual (Minutos)
+                    Timer Visual (Minutos, até 120)
                   </label>
                   <input
                     type="number"
                     min="1"
                     max="120"
+                    step="1"
                     value={editTaskForm.durationMin}
                     onChange={(e) => setEditTaskForm({ ...editTaskForm, durationMin: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-sky-500"

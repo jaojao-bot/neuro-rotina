@@ -67,7 +67,11 @@ class ErrorBoundary extends React.Component {
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
             border: '1px solid #BAE6FD'
           }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🦁</div>
+            <img
+              src="/neuro-rotina-logo.png"
+              alt="Logo NeuroRotina Kids"
+              style={{ width: '96px', height: '96px', objectFit: 'cover', borderRadius: '24px', marginBottom: '16px' }}
+            />
             <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#0F172A', marginBottom: '8px' }}>
               NeuroRotina Kids
             </h2>

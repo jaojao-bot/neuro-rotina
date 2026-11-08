@@ -4,6 +4,7 @@ Este guia registra a linguagem visual do NeuroRotina Kids e define o padrão a s
 
 ## Direção visual
 
+- Use `public/neuro-rotina-logo.png` como marca global do aplicativo, cabeçalho, tela de erro e ícones de instalação.
 - Preserve a identidade acolhedora e lúdica já usada no aplicativo, sem sobrecarregar a tela com estímulos.
 - Mantenha a interface previsível: ações, estados e informações equivalentes devem ter aparência e comportamento equivalentes.
 - Prefira superfícies claras, texto escuro e acentos de cor com significado consistente.

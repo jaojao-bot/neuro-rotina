@@ -276,9 +276,11 @@ export default function App() {
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
           {/* Logo & Science Fair Tag */}
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-teal-400 text-white flex items-center justify-center text-xl shadow-md shadow-sky-200">
-              🦁
-            </div>
+            <img
+              src="/neuro-rotina-logo.png"
+              alt="Logo NeuroRotina Kids"
+              className="w-10 h-10 rounded-2xl object-cover shadow-md shadow-sky-200"
+            />
             <div>
               <div className="flex items-center gap-1.5">
                 <h1 className="font-black text-slate-800 text-base leading-none">

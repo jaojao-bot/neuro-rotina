@@ -227,7 +227,7 @@ export default function KidsArea({
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-[11px] font-black text-slate-400">
-                            {task.time}
+                            {task.time || 'Sem horário definido'}
                           </span>
                           <span className="text-[11px] font-extrabold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
                             +{task.stars} ⭐

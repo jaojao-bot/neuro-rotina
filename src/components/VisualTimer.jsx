@@ -3,16 +3,20 @@ import { Play, Pause, RotateCcw, CheckCircle, Volume2 } from 'lucide-react';
 import { sensoryAudio } from '../utils/audio';
 
 export default function VisualTimer({ durationMinutes = 10, onComplete, taskTitle }) {
-  const totalSeconds = durationMinutes * 60;
+  const parsedDuration = Number(durationMinutes);
+  const safeDurationMinutes = Number.isFinite(parsedDuration)
+    ? Math.min(120, Math.max(1, Math.round(parsedDuration)))
+    : 10;
+  const totalSeconds = safeDurationMinutes * 60;
   const [secondsLeft, setSecondsLeft] = useState(totalSeconds);
   const [isRunning, setIsRunning] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
-    setSecondsLeft(durationMinutes * 60);
+    setSecondsLeft(totalSeconds);
     setIsRunning(false);
     setIsCompleted(false);
-  }, [durationMinutes]);
+  }, [totalSeconds]);
 
   useEffect(() => {
     let interval = null;

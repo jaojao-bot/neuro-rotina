@@ -5,13 +5,13 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F0F9FF",
-  "theme_color": "#0284C7",
+  "theme_color": "#639DC8",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/neuro-rotina-logo.png",
+      "sizes": "768x768",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

@@ -9,7 +9,7 @@ O aplicativo é uma ferramenta de organização e demonstração. Não diagnosti
 ### Modo Criança
 
 - Exibe o perfil atualmente selecionado, o saldo de estrelas e as tarefas associadas a esse perfil.
-- Permite selecionar uma tarefa e consultar seu horário, valor em estrelas e duração configurada.
+- Permite selecionar uma tarefa e consultar seu horário (quando definido), valor em estrelas e duração configurada. O horário é opcional e o timer pode ser configurado entre 1 e 120 minutos.
 - Inclui timer visual regressivo com controles para iniciar, pausar e reiniciar. O timer não conclui a tarefa automaticamente.
 - Permite marcar a tarefa selecionada como concluída. A tarefa passa a aguardar aprovação de um responsável.
 - Oferece check-in de emoções com cinco opções: Muito Feliz, Calmo/Bem, Cansado, Inquieto/Agitado e Sobrecarregado. A seleção mostra uma mensagem e registra a data.
@@ -24,7 +24,7 @@ A entrada é solicitada por um PIN demonstrativo. A área permite:
 - Adicionar e remover sensibilidades do perfil selecionado. Sensibilidades são descrições livres, não avaliações clínicas.
 - Excluir um perfil após confirmação. A exclusão também remove as tarefas vinculadas e o saldo daquele perfil; não é possível excluir o último perfil.
 - Aprovar tarefas pendentes e creditar as estrelas correspondentes.
-- Criar, editar e excluir tarefas. Cada tarefa pode ter título, horário, duração, quantidade de estrelas, categoria, nível de estímulo (baixo, médio ou alto) e dica de adaptação sensorial.
+- Criar, editar e excluir tarefas. Cada tarefa pode ter título, horário opcional, duração de 1 a 120 minutos, quantidade de estrelas, categoria, nível de estímulo (baixo, médio ou alto) e dica de adaptação sensorial.
 - Criar e excluir prêmios, definindo título, custo em estrelas e descrição.
 - Consultar o painel de relatório demonstrativo.
 
