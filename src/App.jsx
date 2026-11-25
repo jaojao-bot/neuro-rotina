@@ -6,10 +6,12 @@ import {
 import KidsArea from './components/KidsArea';
 import ParentsArea from './components/ParentsArea';
 import InstallPromptModal from './components/InstallPromptModal';
+import WelcomeModal from './components/WelcomeModal';
 import { 
   INITIAL_CHILDREN, INITIAL_TASKS, INITIAL_REWARDS, INITIAL_EMOTION_LOGS,
   STORAGE_KEYS, loadData, saveData 
 } from './utils/storage';
+import { fetchInitialAppData, syncTask, syncChild } from './utils/supabaseSync';
 import { sensoryAudio } from './utils/audio';
 
 export default function App() {
@@ -18,6 +20,14 @@ export default function App() {
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [caregiver, setCaregiver] = useState(() => {
+    try {
+      const stored = localStorage.getItem('neurorotina_caregiver');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
 
   // Core App State persisted in localStorage
   const [childrenList, setChildrenList] = useState(() => 
@@ -40,6 +50,16 @@ export default function App() {
   useEffect(() => {
     saveData(STORAGE_KEYS.CHILDREN, childrenList);
   }, [childrenList]);
+
+  // Carregar dados iniciais do Supabase na inicialização
+  useEffect(() => {
+    fetchInitialAppData().then((data) => {
+      if (data.children && data.children.length > 0) setChildrenList(data.children);
+      if (data.tasks && data.tasks.length > 0) setTasksList(data.tasks);
+      if (data.rewards && data.rewards.length > 0) setRewardsList(data.rewards);
+      if (data.emotionLogs && data.emotionLogs.length > 0) setEmotionLogs(data.emotionLogs);
+    }).catch(console.error);
+  }, []);
 
   useEffect(() => {
     saveData(STORAGE_KEYS.ACTIVE_CHILD_ID, activeChildId);
@@ -441,6 +461,11 @@ export default function App() {
       {/* PWA / Download Instructions Modal */}
       {showInstallModal && (
         <InstallPromptModal onClose={() => setShowInstallModal(false)} />
+      )}
+
+      {/* Tela Inicial de Cadastro do Cuidador */}
+      {!caregiver && (
+        <WelcomeModal onComplete={(data) => setCaregiver(data)} />
       )}
     </div>
   );
