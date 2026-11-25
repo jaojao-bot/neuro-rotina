@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Users, UserCheck, ShieldCheck, Download, Sparkles, Star, 
-  RotateCcw, Lock, Unlock, X, ChevronDown, Check, Smartphone, Flame 
+  RotateCcw, Lock, Unlock, X, ChevronDown, Check, Smartphone, Flame, LogOut 
 } from 'lucide-react';
 import KidsArea from './components/KidsArea';
 import ParentsArea from './components/ParentsArea';
 import InstallPromptModal from './components/InstallPromptModal';
-import WelcomeModal from './components/WelcomeModal';
+import AuthModal from './components/AuthModal';
+import { supabase } from './utils/supabase';
 import { 
   INITIAL_CHILDREN, INITIAL_TASKS, INITIAL_REWARDS, INITIAL_EMOTION_LOGS,
   STORAGE_KEYS, loadData, saveData 
@@ -20,14 +21,29 @@ export default function App() {
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
-  const [caregiver, setCaregiver] = useState(() => {
-    try {
-      const stored = localStorage.getItem('neurorotina_caregiver');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Monitorar Sessão do Supabase Auth
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    if (window.confirm('Deseja sair da sua conta de cuidador?')) {
+      await supabase.auth.signOut();
+      setCurrentUser(null);
     }
-  });
+  };
 
   // Core App State persisted in localStorage
   const [childrenList, setChildrenList] = useState(() => 
@@ -331,6 +347,16 @@ export default function App() {
             >
               <RotateCcw size={16} />
             </button>
+
+            {currentUser && (
+              <button
+                onClick={handleSignOut}
+                className="p-2 text-rose-500 hover:text-rose-700 rounded-xl hover:bg-rose-50 transition"
+                title="Sair da Conta (Logout)"
+              >
+                <LogOut size={16} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -463,9 +489,9 @@ export default function App() {
         <InstallPromptModal onClose={() => setShowInstallModal(false)} />
       )}
 
-      {/* Tela Inicial de Cadastro do Cuidador */}
-      {!caregiver && (
-        <WelcomeModal onComplete={(data) => setCaregiver(data)} />
+      {/* Tela Inicial de Autenticação Real do Cuidador */}
+      {!authLoading && !currentUser && (
+        <AuthModal onAuthSuccess={(user) => setCurrentUser(user)} />
       )}
     </div>
   );
